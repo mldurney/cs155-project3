@@ -3202,3 +3202,11 @@ youth 1
 youth's 1
 youthful 2
 zealous 2
+. 0
+, 0
+! 0
+? 0
+; 0
+: 0
+( 0
+) 0
