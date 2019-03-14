@@ -107,7 +107,8 @@ if __name__ == '__main__':
 
     filename = 'unsupervised_hmm_' + \
         str(n_states) + 'states_' + str(n_iters) + 'iters.txt'
-    with open(filename, 'w') as f:
+    filepath = '../sonnets/' + filename
+    with open(filepath, 'w') as f:
         f.writelines(sonnet)
 
     print('Resulting sonnet:')
