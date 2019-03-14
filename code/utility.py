@@ -119,17 +119,17 @@ class Utility:
                     word = word.capitalize()
 
                 if remaining in word_syllables:
-                    remaining = 0
                     line += add_word(word, remaining)
+                    remaining = 0
                 else:
                     if remaining in end_syllables:
-                        remaining = 0
                         line += add_word(word, remaining)
+                        remaining = 0
                     else:
                         for count in word_syllables:
                             if count < remaining:
-                                remaining -= count
                                 line += add_word(word, remaining)
+                                remaining -= count
                                 break
 
             else:
@@ -145,19 +145,29 @@ class Utility:
         return emission_idx, line
 
     @staticmethod
-    def generate_sonnet(hmm, id_to_word, word_to_syllables,
-                        word_to_end_syllables, n_syllables=10, n_lines=14):
-        sonnet = []
+    def generate_poem(hmm, id_to_word, word_to_syllables,
+                      word_to_end_syllables, n_syllables=10, n_lines=14):
+        if not isinstance(n_syllables, (list,)):
+            n_syllables = [n_syllables] * n_lines
+
+        poem = []
 
         # Sample and convert sentence, with buffer for punctuation
         # and ending words with too many syllables.
-        emission, _ = hmm.generate_emission(3 * n_syllables * n_lines)
+        emission, _ = hmm.generate_emission(3 * sum(n_syllables))
 
         emission_idx = 0
-        for _ in range(n_lines):
+        for n in n_syllables:
             emission_idx, line = Utility.sample_line(
                 emission, id_to_word, word_to_syllables,
-                word_to_end_syllables, n_syllables, emission_idx)
-            sonnet.append(line)
+                word_to_end_syllables, n, emission_idx)
+            poem.append(line)
 
-        return sonnet
+        return poem
+
+    @staticmethod
+    def generate_sonnet(hmm, id_to_word, word_to_syllables,
+                        word_to_end_syllables):
+        return Utility.generate_poem(hmm, id_to_word, word_to_syllables,
+                                     word_to_end_syllables, 10, 14)
+

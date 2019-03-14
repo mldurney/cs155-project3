@@ -7,7 +7,8 @@ if __name__ == '__main__':
         print('usage: python generate_sonnet.py <hmm_filename> <sonnet_filename>')
 
     hmm_filename = sys.argv[1]
-    sonnet_filename = sys.argv[2]
+    if len(sys.argv) > 2:
+        sonnet_filename = sys.argv[2]
 
     with open(hmm_filename, "rb") as f:
         hmm = pickle.load(f)
@@ -18,9 +19,10 @@ if __name__ == '__main__':
     sonnet = Utility.generate_sonnet(
         hmm, id_to_word, word_to_syllables, word_to_end_syllables)
 
-    filepath = '../sonnets/' + sonnet_filename
-    with open(filepath, 'w') as f:
-        f.write('\n'.join(sonnet))
+    if len(sys.argv) > 2:
+        filepath = '../poems/' + sonnet_filename
+        with open(filepath, 'w') as f:
+            f.write('\n'.join(sonnet))
 
     print('')
     print('Sonnet:')
