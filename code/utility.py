@@ -49,18 +49,18 @@ class Utility:
         '''
 
         # Unpack data from pickle file
-        with open("../data/preprocessed_data.pkl") as f:
+        with open("../data/preprocessed_data.pkl", "rb") as f:
             preprocessed_data = pickle.load(f)
             data = preprocessed_data["data"]
             word_to_id = preprocessed_data["word_to_id"]
             id_to_word = preprocessed_data["id_to_word"]
             word_to_end_syllables = preprocessed_data["word_to_end_syllables"]
-            end_syllables_to_word = preprocessed_data["end_syllables_to_word"]
+            end_syllable_to_words = preprocessed_data["end_syllable_to_words"]
             word_to_syllables = preprocessed_data["word_to_syllables"]
             syllable_to_words = preprocessed_data["syllable_to_words"]
 
         return data, word_to_id, id_to_word, word_to_end_syllables, \
-            end_syllables_to_word, word_to_syllables, syllable_to_words
+            end_syllable_to_words, word_to_syllables, syllable_to_words
 
     @staticmethod
     def load_data():
@@ -82,56 +82,82 @@ class Utility:
         return data
 
     @staticmethod
-    def sample_line(hmm, id_to_word, word_to_syllables, word_to_end_syllables,
-                    n_syllables=10):
+    def sample_line(emission, id_to_word, word_to_syllables,
+                    word_to_end_syllables, n_syllables, emission_idx):
+        # Helper function to add leading space to word when needed.
+        def add_word(word, remaining):
+            addition = ""
+            if remaining != n_syllables:
+                addition += " "
+            addition += word
+            return addition
+
         punctuation = ".,!?;:()"
+        end_punctuation = ".!?"
+        parantheses = "()"
+        capitalize = True
 
-        # Sample and convert sentence, with buffer for punctuation
-        # and ending words with too many syllables.
-        emission, _ = hmm.generate_emission(3 * n_syllables)
-
-        emission_idx = 0
         remaining = n_syllables
-        sentence = ""
+        line = ""
         while remaining > 0:
             # Make sure there are still words left in the emission.
-            assert(emission_idx < 3 * n_syllables)
+            assert(emission_idx < len(emission))
 
             emission_idx += 1
             word = id_to_word[emission[emission_idx]]
 
             if word not in punctuation:
-                if remaining != n_syllables:
-                    sentence += " "
-
                 word_syllables = word_to_syllables[word]
+                end_syllables = word_to_end_syllables[word]
+                was_prev_word = True
+
+                if capitalize:
+                    word = word.capitalize()
+                    capitalize = False
+
+                if word == 'i':
+                    word = word.capitalize()
+
                 if remaining in word_syllables:
                     remaining = 0
-                    sentence += word
+                    line += add_word(word, remaining)
                 else:
-                    end_syllables = word_to_end_syllables[word]
                     if remaining in end_syllables:
                         remaining = 0
-                        sentence += word
+                        line += add_word(word, remaining)
                     else:
                         for count in word_syllables:
                             if count < remaining:
                                 remaining -= count
-                                sentence += word
+                                line += add_word(word, remaining)
                                 break
 
             else:
-                if remaining != n_syllables:
-                    sentence += word
+                if remaining != n_syllables \
+                        and word not in parantheses \
+                        and was_prev_word:
+                    line += word
+                    was_prev_word = False
 
-        return sentence.capitalize()
+                    if word in end_punctuation:
+                        capitalize = True
+
+        return emission_idx, line
 
     @staticmethod
-    def generate_sonnet(hmm, id_to_word, word_to_syllables, word_to_end_syllables,
-                        n_syllables=10, n_lines=14):
+    def generate_sonnet(hmm, id_to_word, word_to_syllables,
+                        word_to_end_syllables, n_syllables=10, n_lines=14):
         sonnet = []
-        for _ in n_lines:
-            sonnet.append(Utility.sample_line(
-                hmm, id_to_word, word_to_syllables,
-                word_to_end_syllables, n_syllables))
+
+        # Sample and convert sentence, with buffer for punctuation
+        # and ending words with too many syllables.
+        emission, _ = hmm.generate_emission(3 * n_syllables * n_lines)
+
+        emission_idx = 0
+        for _ in range(n_lines):
+            emission_idx, line = Utility.sample_line(
+                emission, id_to_word, word_to_syllables,
+                word_to_end_syllables, n_syllables, emission_idx)
+            sonnet.append(line)
+
         return sonnet

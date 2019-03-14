@@ -30,8 +30,7 @@ def unsupervised_learning(n_states, n_iters, filename='', verbose=False):
     '''
 
     if filename == '':
-        filename = 'unsupervised_hmm_' + \
-            str(n_states) + 'states_' + str(n_iters) + 'iters.pkl'
+        filename = 'hmm_' + str(n_states) + 's_' + str(n_iters) + 'i.pkl'
     filepath = '../models/' + filename
 
     data = Utility.load_data()
@@ -105,11 +104,10 @@ if __name__ == '__main__':
     sonnet = Utility.generate_sonnet(
         hmm, id_to_word, word_to_syllables, word_to_end_syllables)
 
-    filename = 'unsupervised_hmm_' + \
-        str(n_states) + 'states_' + str(n_iters) + 'iters.txt'
+    filename = 'hmm_' + str(n_states) + 's_' + str(n_iters) + 'i.txt'
     filepath = '../sonnets/' + filename
     with open(filepath, 'w') as f:
-        f.writelines(sonnet)
+        f.write('\n'.join(sonnet))
 
     print('Resulting sonnet:')
     print('#' * 70)
