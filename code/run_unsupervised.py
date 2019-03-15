@@ -104,8 +104,8 @@ if __name__ == '__main__':
     sonnet = Utility.generate_sonnet(
         hmm, id_to_word, word_to_syllables, word_to_end_syllables)
 
-    filename = 'hmm_' + str(n_states) + 's_' + str(n_iters) + 'i.txt'
-    filepath = '../sonnets/' + filename
+    filename = 'hmm_sonnet_' + str(n_states) + 's_' + str(n_iters) + 'i.txt'
+    filepath = '../poems/' + filename
     with open(filepath, 'w') as f:
         f.write('\n'.join(sonnet))
 
