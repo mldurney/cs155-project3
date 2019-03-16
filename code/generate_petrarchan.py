@@ -23,7 +23,7 @@ if __name__ == '__main__':
     if is_rhyming:
         sonnet = Utility.generate_rhyming_poem(hmm, id_to_word, word_to_syllables,
             word_to_end_syllables, 10, 14, rhyme_id_to_word_ids, 
-            word_id_to_rhyme_id)
+            word_id_to_rhyme_id, 'petrarchan')
         
     else:
         sonnet = Utility.generate_sonnet(
@@ -35,7 +35,7 @@ if __name__ == '__main__':
             f.write('\n'.join(sonnet))
 
     print('')
-    print('Sonnet:')
+    print('Petrarchan Sonnet:')
     print('#' * 70)
     print('')
     print(*sonnet, sep='\n')

@@ -12,6 +12,8 @@
 
 import random
 from tqdm import tqdm
+import numpy as np
+import scipy.linalg
 
 class HiddenMarkovModel:
     '''
@@ -429,6 +431,94 @@ class HiddenMarkovModel:
 
         return emission, states
 
+    @staticmethod
+    def get_steady_state_probability(p):
+        # p is a transition matrix
+        # Source code from here: https://math.stackexchange.com/questions/1020681/finding-steady-state-probabilities-by-solving-equation-system
+        p = np.array(p)
+        dim = p.shape[0]
+        q = (p-np.eye(dim))
+        ones = np.ones(dim)
+        q = np.c_[q,ones]
+        QTQ = np.dot(q, q.T)
+        bQT = np.ones(dim)
+        return np.linalg.solve(QTQ,bQT)
+    
+    @staticmethod
+    def get_steady_state_probability_eigen(M):
+        # https://math.stackexchange.com/questions/1020681/finding-steady-state-probabilities-by-solving-equation-system
+        theEigenvalues, leftEigenvectors = scipy.linalg.eig(M, right=False, left=True)  
+        theEigenvalues = theEigenvalues.real                 
+        leftEigenvectors = leftEigenvectors.real
+        tolerance = 1e-10            
+        mask = abs(theEigenvalues - 1) < tolerance 
+        theEigenvalues = theEigenvalues[mask]    
+        leftEigenvectors = leftEigenvectors[:, mask] 
+        leftEigenvectors[leftEigenvectors < tolerance] = 0  
+        attractorDistributions = leftEigenvectors / leftEigenvectors.sum(axis=0, keepdims=True)   
+        attractorDistributions = attractorDistributions.T
+        theSteadyStates = np.sum(attractorDistributions, axis=0)  
+        return theSteadyStates
+    
+    
+    def generate_reverse_emission(self, M, seed_emission):
+        '''
+        Generates an emission of length M, assuming that the starting state
+        is chosen uniformly at random.
+
+        Arguments:
+            M:          Length of the emission to generate.
+
+        Returns:
+            emission:   The randomly generated emission as a list.
+
+            states:     The randomly generated states as a list.
+        '''
+
+        emission = [seed_emission]
+        assert(seed_emission < self.D)
+        state_probs = self.get_steady_state_probability_eigen(self.A)
+        cond_emission_probs = np.array(self.O)[:, seed_emission]
+        cond_emission_probs_norm = sum(cond_emission_probs)
+        emission_probs = state_probs * \
+            (cond_emission_probs / cond_emission_probs_norm) + 1e-10
+        #print(self.A)
+        #print(emission_probs, self.L)
+        state = np.random.choice(self.L, 1, list(emission_probs))[0]
+        states = []
+
+        for _ in range(M):
+            # Append state.
+            states.append(state)
+
+            # Sample next state.
+            rand_var = random.uniform(0, 1)
+            prev_state = 0
+
+            state_norm = sum([self.A[i][state] for i in range(self.L)])
+            assert(np.isclose(sum([self.A[i][state]
+                                   / state_norm for i in range(self.L)]), 1))
+            
+            while rand_var > 0:
+                rand_var -= self.A[prev_state][state] / state_norm
+                prev_state += 1
+
+            prev_state -= 1
+            state = prev_state
+                        
+            # Sample next observation.
+            rand_var = random.uniform(0, 1)
+            next_obs = 0
+
+            while rand_var > 0:
+                rand_var -= self.O[state][next_obs]
+                next_obs += 1
+
+            next_obs -= 1
+            emission.append(next_obs)
+
+            
+        return emission, states
 
     def probability_alphas(self, x):
         '''
